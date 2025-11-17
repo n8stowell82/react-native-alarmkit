@@ -1,5 +1,11 @@
 import Foundation
 import AlarmKit
+import SwiftUI
+
+// Metadata for alarms
+nonisolated struct BasicAlarmMetadata: AlarmMetadata {
+    // Empty metadata for basic alarms
+}
 
 @available(iOS 26.0, *)
 class AlarmKitManager {
@@ -18,9 +24,7 @@ class AlarmKitManager {
     // MARK: - Authorization
 
     func checkAuthorization() async -> String {
-        let state = await manager.authorizationState
-
-        switch state {
+        switch manager.authorizationState {
         case .notDetermined:
             return "notDetermined"
         case .authorized:
@@ -49,30 +53,20 @@ class AlarmKitManager {
             "config": config
         ]
 
-        var alarmConfiguration: Alarm.Configuration
+        let attributes = buildAlarmAttributes(config: config)
+        let duration = calculateDuration(schedule: schedule)
 
-        // Build alarm configuration based on type
-        switch type {
-        case "recurring":
-            alarmConfiguration = try buildRecurringAlarm(schedule: schedule, config: config)
-        case "interval":
-            alarmConfiguration = try buildIntervalAlarm(schedule: schedule, config: config)
-        case "fixed":
-            alarmConfiguration = try buildFixedAlarm(schedule: schedule, config: config)
-        default:
-            throw NSError(
-                domain: "AlarmKitManager",
-                code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid schedule type: \(type)"]
-            )
-        }
-
-        // Schedule alarm
+        // Schedule alarm using timer configuration
         let uuid = UUID(uuidString: alarmId) ?? UUID()
-        let alarm = try await manager.schedule(id: uuid, configuration: alarmConfiguration)
+        let alarm = try await manager.schedule(
+            id: uuid,
+            configuration: .timer(
+                duration: duration,
+                attributes: attributes
+            )
+        )
 
-        // Calculate next fire date
-        let nextFireDate = calculateNextFireDate(schedule: schedule)
+        let nextFireDate = Date.now.addingTimeInterval(duration)
 
         return [
             "id": alarmId,
@@ -94,12 +88,11 @@ class AlarmKitManager {
             )
         }
 
-        try manager.cancel(id: uuid)
+        manager.cancel(id: uuid)
         alarmMetadataStore.removeValue(forKey: id)
     }
 
     func cancelAllAlarms() async throws {
-        // Get all alarms and cancel them
         let alarms = try await getAllAlarms()
 
         for alarm in alarms {
@@ -131,7 +124,8 @@ class AlarmKitManager {
             return nil
         }
 
-        let nextFireDate = calculateNextFireDate(schedule: schedule)
+        let duration = calculateDuration(schedule: schedule)
+        let nextFireDate = Date.now.addingTimeInterval(duration)
 
         return [
             "id": id,
@@ -177,22 +171,46 @@ class AlarmKitManager {
     // MARK: - Actions
 
     func snoozeAlarm(id: String, minutes: Int) async throws {
-        guard let uuid = UUID(uuidString: id) else {
+        // For snooze, cancel existing and reschedule
+        guard let metadata = alarmMetadataStore[id],
+              let schedule = metadata["schedule"] as? NSDictionary,
+              let config = metadata["config"] as? NSDictionary else {
             throw NSError(
                 domain: "AlarmKitManager",
-                code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid alarm ID"]
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Alarm not found"]
             )
         }
 
-        let duration = TimeInterval(minutes * 60)
-        try manager.snooze(id: uuid, duration: duration)
+        try await cancelAlarm(id: id)
+
+        // Reschedule with snooze delay
+        let snoozeDuration = TimeInterval(minutes * 60)
+        let attributes = buildAlarmAttributes(config: config)
+
+        let uuid = UUID(uuidString: id) ?? UUID()
+        _ = try await manager.schedule(
+            id: uuid,
+            configuration: .timer(
+                duration: snoozeDuration,
+                attributes: attributes
+            )
+        )
+
+        // Restore metadata
+        alarmMetadataStore[id] = metadata
     }
 
     // MARK: - Helper Methods
 
-    private func buildFixedAlarm(schedule: NSDictionary, config: NSDictionary) throws -> Alarm.Configuration {
-        // Fixed alarms use countdown timer
+    private func calculateDuration(schedule: NSDictionary) -> TimeInterval {
+        let type = schedule["type"] as? String ?? "fixed"
+
+        if type == "interval", let intervalMinutes = schedule["intervalMinutes"] as? Int {
+            return TimeInterval(intervalMinutes * 60)
+        }
+
+        // For fixed and recurring, calculate time until next alarm
         let time = schedule["time"] as? NSDictionary
         let hour = time?["hour"] as? Int ?? 8
         let minute = time?["minute"] as? Int ?? 0
@@ -207,7 +225,7 @@ class AlarmKitManager {
         components.second = 0
 
         guard var targetDate = calendar.date(from: components) else {
-            throw NSError(domain: "AlarmKitManager", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid date"])
+            return 3600 // Default 1 hour
         }
 
         // If time has passed today, schedule for tomorrow
@@ -215,197 +233,55 @@ class AlarmKitManager {
             targetDate = calendar.date(byAdding: .day, value: 1, to: targetDate)!
         }
 
-        let duration = targetDate.timeIntervalSince(now)
-
-        let attributes = buildAlarmAttributes(config: config)
-
-        return Alarm.Configuration.timer(
-            duration: duration,
-            attributes: attributes
-        )
-    }
-
-    private func buildRecurringAlarm(schedule: NSDictionary, config: NSDictionary) throws -> Alarm.Configuration {
-        guard let time = schedule["time"] as? NSDictionary,
-              let hour = time["hour"] as? Int,
-              let minute = time["minute"] as? Int else {
-            throw NSError(domain: "AlarmKitManager", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid time"])
-        }
-
-        let daysOfWeek = schedule["daysOfWeek"] as? [Int] ?? []
-
-        let alarmTime = Alarm.Schedule.Relative.Time(hour: hour, minute: minute)
-
-        let recurrence: Alarm.Schedule.Relative.Recurrence
-        if daysOfWeek.isEmpty {
-            recurrence = .daily
-        } else {
-            let days = daysOfWeek.compactMap { dayInt -> DayOfWeek? in
-                switch dayInt {
-                case 0: return .sunday
-                case 1: return .monday
-                case 2: return .tuesday
-                case 3: return .wednesday
-                case 4: return .thursday
-                case 5: return .friday
-                case 6: return .saturday
-                default: return nil
-                }
-            }
-            recurrence = .weekly(days)
-        }
-
-        let alarmSchedule = Alarm.Schedule.Relative(time: alarmTime, repeats: recurrence)
-        let attributes = buildAlarmAttributes(config: config)
-
-        return Alarm.Configuration(
-            schedule: alarmSchedule,
-            attributes: attributes
-        )
-    }
-
-    private func buildIntervalAlarm(schedule: NSDictionary, config: NSDictionary) throws -> Alarm.Configuration {
-        guard let intervalMinutes = schedule["intervalMinutes"] as? Int else {
-            throw NSError(domain: "AlarmKitManager", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid interval"])
-        }
-
-        let duration = TimeInterval(intervalMinutes * 60)
-        let attributes = buildAlarmAttributes(config: config)
-
-        return Alarm.Configuration.timer(
-            duration: duration,
-            attributes: attributes
-        )
+        return targetDate.timeIntervalSince(now)
     }
 
     private func buildAlarmAttributes(config: NSDictionary) -> AlarmAttributes<BasicAlarmMetadata> {
         let title = config["title"] as? String ?? "Alarm"
-        let sound = config["sound"] as? String
         let colorHex = config["color"] as? String ?? "#007AFF"
 
         // Build stop button
         let stopButton = AlarmButton(
             text: "Done",
-            textColor: .white,
+            textColor: hexToColor(colorHex),
             systemImageName: "checkmark.circle.fill"
         )
 
-        // Build secondary button if actions exist
-        var secondaryButton: AlarmButton?
-        var secondaryBehavior: AlarmPresentation.Alert.SecondaryButtonBehavior?
-
-        if let actions = config["actions"] as? [[String: Any]],
-           actions.count > 1 {
-            let secondaryAction = actions[1]
-            let actionTitle = secondaryAction["title"] as? String ?? "Snooze"
-            let actionIcon = secondaryAction["icon"] as? String ?? "clock.arrow.circlepath"
-            let behavior = secondaryAction["behavior"] as? String ?? "snooze"
-
-            secondaryButton = AlarmButton(
-                text: actionTitle,
-                textColor: .gray,
-                systemImageName: actionIcon
-            )
-
-            if behavior == "snooze" {
-                let snoozeDuration = secondaryAction["snoozeDuration"] as? Int ?? 10
-                secondaryBehavior = .snooze(duration: TimeInterval(snoozeDuration * 60))
-            } else {
-                secondaryBehavior = .custom
-            }
-        }
-
         // Build alert presentation
-        let alert: AlarmPresentation.Alert
-        if let secondary = secondaryButton, let behavior = secondaryBehavior {
-            alert = AlarmPresentation.Alert(
-                title: title,
-                stopButton: stopButton,
-                secondaryButton: secondary,
-                secondaryButtonBehavior: behavior
-            )
-        } else {
-            alert = AlarmPresentation.Alert(
-                title: title,
-                stopButton: stopButton
-            )
-        }
+        let alert = AlarmPresentation.Alert(
+            title: title,
+            stopButton: stopButton
+        )
 
-        // Build sound
-        var alertSound: AlertConfiguration.AlertSound = .default
-        if let soundName = sound {
-            if soundName == "none" {
-                alertSound = .none
-            } else if soundName != "default" {
-                alertSound = .named(soundName)
-            }
-        }
-
-        // Build attributes
-        let metadata = BasicAlarmMetadata()
-        let tintColor = UIColor(hex: colorHex)
+        let presentation = AlarmPresentation(alert: alert)
+        let tintColor = hexToColor(colorHex)
 
         let attributes = AlarmAttributes<BasicAlarmMetadata>(
-            presentation: AlarmPresentation(alert: alert),
+            presentation: presentation,
             tintColor: tintColor
         )
 
         return attributes
     }
 
-    private func calculateNextFireDate(schedule: NSDictionary) -> Date {
-        let type = schedule["type"] as? String ?? "fixed"
-        let time = schedule["time"] as? NSDictionary
-        let hour = time?["hour"] as? Int ?? 8
-        let minute = time?["minute"] as? Int ?? 0
+    private func hexToColor(_ hex: String) -> Color {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
 
-        let now = Date()
-        var calendar = Calendar.current
-        calendar.timeZone = TimeZone.current
+        var rgb: UInt64 = 0
+        Scanner(string: hexSanitized).scanHexInt64(&rgb)
 
-        var components = calendar.dateComponents([.year, .month, .day], from: now)
-        components.hour = hour
-        components.minute = minute
-        components.second = 0
+        let red = Double((rgb & 0xFF0000) >> 16) / 255.0
+        let green = Double((rgb & 0x00FF00) >> 8) / 255.0
+        let blue = Double(rgb & 0x0000FF) / 255.0
 
-        guard var targetDate = calendar.date(from: components) else {
-            return now
-        }
-
-        // If time has passed today, schedule for tomorrow (or next occurrence for recurring)
-        if targetDate <= now {
-            if type == "recurring" {
-                let daysOfWeek = schedule["daysOfWeek"] as? [Int] ?? []
-                if !daysOfWeek.isEmpty {
-                    // Find next day of week
-                    let currentWeekday = calendar.component(.weekday, from: now) - 1
-                    var daysToAdd = 1
-
-                    for i in 1...7 {
-                        let checkDay = (currentWeekday + i) % 7
-                        if daysOfWeek.contains(checkDay) {
-                            daysToAdd = i
-                            break
-                        }
-                    }
-
-                    targetDate = calendar.date(byAdding: .day, value: daysToAdd, to: targetDate)!
-                } else {
-                    targetDate = calendar.date(byAdding: .day, value: 1, to: targetDate)!
-                }
-            } else {
-                targetDate = calendar.date(byAdding: .day, value: 1, to: targetDate)!
-            }
-        }
-
-        return targetDate
+        return Color(red: red, green: green, blue: blue)
     }
 
     private func monitorAlarms() async {
         for await alarms in manager.alarmUpdates {
             for alarm in alarms {
                 if alarm.state == .alerting {
-                    // Alarm fired - notify delegate
                     let alarmId = alarm.id.uuidString
 
                     if let metadata = alarmMetadataStore[alarmId],
@@ -426,29 +302,5 @@ class AlarmKitManager {
                 }
             }
         }
-    }
-}
-
-// MARK: - Basic Alarm Metadata
-
-struct BasicAlarmMetadata: AlarmMetadata {
-    // Empty metadata for basic alarms
-}
-
-// MARK: - UIColor Extension
-
-extension UIColor {
-    convenience init(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
-        var rgb: UInt64 = 0
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
-
-        let red = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
-        let green = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
-        let blue = CGFloat(rgb & 0x0000FF) / 255.0
-
-        self.init(red: red, green: green, blue: blue, alpha: 1.0)
     }
 }
