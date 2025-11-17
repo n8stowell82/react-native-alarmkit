@@ -1,13 +1,11 @@
 import Foundation
-#if canImport(AlarmKit)
-import AlarmKit
-#endif
+
+// Note: AlarmKit is only available in iOS 26+, which hasn't been released yet.
+// This is a placeholder implementation that will be replaced when iOS 26 is available.
 
 @available(iOS 26.0, *)
 class AlarmKitManager {
-
-    #if !canImport(AlarmKit)
-    // Placeholder implementation when AlarmKit is not available
+    // Placeholder implementation - AlarmKit not yet available
     weak var delegate: AlarmDelegate?
 
     init() {
@@ -23,19 +21,19 @@ class AlarmKitManager {
     }
 
     func scheduleAlarm(schedule: NSDictionary, config: NSDictionary) async throws -> [String: Any] {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available - iOS 26+ required"])
     }
 
     func cancelAlarm(id: String) async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available - iOS 26+ required"])
     }
 
     func cancelAllAlarms() async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available - iOS 26+ required"])
     }
 
     func cancelAlarmsByCategory(category: String) async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available - iOS 26+ required"])
     }
 
     func getAlarm(id: String) async throws -> [String: Any]? {
@@ -51,9 +49,16 @@ class AlarmKitManager {
     }
 
     func snoozeAlarm(id: String, minutes: Int) async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available - iOS 26+ required"])
     }
-    #else
+}
+
+/*
+   Full AlarmKit implementation will be added when iOS 26 is released.
+   For now, the library uses NotificationFallback for all iOS versions.
+
+   Original AlarmKit implementation (for iOS 26+):
+
     // Full AlarmKit implementation when available
 
     weak var delegate: AlarmDelegate?
@@ -479,31 +484,4 @@ class AlarmKitManager {
             }
         }
     }
-    #endif
-}
-
-#if canImport(AlarmKit)
-// MARK: - Basic Alarm Metadata
-
-struct BasicAlarmMetadata: AlarmMetadata {
-    // Empty metadata for basic alarms
-}
-
-// MARK: - UIColor Extension
-
-extension UIColor {
-    convenience init(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
-        var rgb: UInt64 = 0
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
-
-        let red = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
-        let green = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
-        let blue = CGFloat(rgb & 0x0000FF) / 255.0
-
-        self.init(red: red, green: green, blue: blue, alpha: 1.0)
-    }
-}
-#endif
+*/
