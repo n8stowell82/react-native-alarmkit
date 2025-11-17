@@ -1,8 +1,60 @@
 import Foundation
+#if canImport(AlarmKit)
 import AlarmKit
+#endif
 
 @available(iOS 26.0, *)
 class AlarmKitManager {
+
+    #if !canImport(AlarmKit)
+    // Placeholder implementation when AlarmKit is not available
+    weak var delegate: AlarmDelegate?
+
+    init() {
+        // Empty initializer for compatibility
+    }
+
+    func checkAuthorization() async -> String {
+        return "notDetermined"
+    }
+
+    func requestPermission() async throws -> Bool {
+        return false
+    }
+
+    func scheduleAlarm(schedule: NSDictionary, config: NSDictionary) async throws -> [String: Any] {
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+    }
+
+    func cancelAlarm(id: String) async throws {
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+    }
+
+    func cancelAllAlarms() async throws {
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+    }
+
+    func cancelAlarmsByCategory(category: String) async throws {
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+    }
+
+    func getAlarm(id: String) async throws -> [String: Any]? {
+        return nil
+    }
+
+    func getAllAlarms() async throws -> [[String: Any]] {
+        return []
+    }
+
+    func getAlarmsByCategory(category: String) async throws -> [[String: Any]] {
+        return []
+    }
+
+    func snoozeAlarm(id: String, minutes: Int) async throws {
+        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
+    }
+    #else
+    // Full AlarmKit implementation when available
 
     weak var delegate: AlarmDelegate?
     private let manager = AlarmManager.shared
@@ -427,8 +479,10 @@ class AlarmKitManager {
             }
         }
     }
+    #endif
 }
 
+#if canImport(AlarmKit)
 // MARK: - Basic Alarm Metadata
 
 struct BasicAlarmMetadata: AlarmMetadata {
@@ -452,3 +506,4 @@ extension UIColor {
         self.init(red: red, green: green, blue: blue, alpha: 1.0)
     }
 }
+#endif
