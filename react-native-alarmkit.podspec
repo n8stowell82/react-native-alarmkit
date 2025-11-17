@@ -17,7 +17,9 @@ Pod::Spec.new do |s|
 
   s.dependency "React-Core"
 
-  # Conditionally require AlarmKit for iOS 26+
-  # Note: AlarmKit is only available on iOS 26+, but pod will gracefully handle its absence
-  # The code uses @available checks to ensure it only runs on supported versions
+  # Weak link AlarmKit for iOS 26+ (optional framework)
+  s.weak_frameworks = "AlarmKit"
+
+  # Swift version
+  s.swift_version = "5.0"
 end

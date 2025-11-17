@@ -1,60 +1,8 @@
 import Foundation
-#if canImport(AlarmKit)
 import AlarmKit
-#endif
 
 @available(iOS 26.0, *)
 class AlarmKitManager {
-
-    #if !canImport(AlarmKit)
-    // Placeholder implementation when AlarmKit is not available
-    weak var delegate: AlarmDelegate?
-
-    init() {
-        // Empty initializer for compatibility
-    }
-
-    func checkAuthorization() async -> String {
-        return "notDetermined"
-    }
-
-    func requestPermission() async throws -> Bool {
-        return false
-    }
-
-    func scheduleAlarm(schedule: NSDictionary, config: NSDictionary) async throws -> [String: Any] {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
-    }
-
-    func cancelAlarm(id: String) async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
-    }
-
-    func cancelAllAlarms() async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
-    }
-
-    func cancelAlarmsByCategory(category: String) async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
-    }
-
-    func getAlarm(id: String) async throws -> [String: Any]? {
-        return nil
-    }
-
-    func getAllAlarms() async throws -> [[String: Any]] {
-        return []
-    }
-
-    func getAlarmsByCategory(category: String) async throws -> [[String: Any]] {
-        return []
-    }
-
-    func snoozeAlarm(id: String, minutes: Int) async throws {
-        throw NSError(domain: "AlarmKitManager", code: 500, userInfo: [NSLocalizedDescriptionKey: "AlarmKit not available"])
-    }
-    #else
-    // Full AlarmKit implementation when available
 
     weak var delegate: AlarmDelegate?
     private let manager = AlarmManager.shared
@@ -101,7 +49,7 @@ class AlarmKitManager {
             "config": config
         ]
 
-        var alarmConfiguration: AlarmConfiguration<BasicAlarmMetadata>
+        var alarmConfiguration: Alarm.Configuration
 
         // Build alarm configuration based on type
         switch type {
@@ -243,7 +191,7 @@ class AlarmKitManager {
 
     // MARK: - Helper Methods
 
-    private func buildFixedAlarm(schedule: NSDictionary, config: NSDictionary) throws -> AlarmConfiguration<BasicAlarmMetadata> {
+    private func buildFixedAlarm(schedule: NSDictionary, config: NSDictionary) throws -> Alarm.Configuration {
         // Fixed alarms use countdown timer
         let time = schedule["time"] as? NSDictionary
         let hour = time?["hour"] as? Int ?? 8
@@ -271,13 +219,13 @@ class AlarmKitManager {
 
         let attributes = buildAlarmAttributes(config: config)
 
-        return AlarmConfiguration.timer(
+        return Alarm.Configuration.timer(
             duration: duration,
             attributes: attributes
         )
     }
 
-    private func buildRecurringAlarm(schedule: NSDictionary, config: NSDictionary) throws -> AlarmConfiguration<BasicAlarmMetadata> {
+    private func buildRecurringAlarm(schedule: NSDictionary, config: NSDictionary) throws -> Alarm.Configuration {
         guard let time = schedule["time"] as? NSDictionary,
               let hour = time["hour"] as? Int,
               let minute = time["minute"] as? Int else {
@@ -310,13 +258,13 @@ class AlarmKitManager {
         let alarmSchedule = Alarm.Schedule.Relative(time: alarmTime, repeats: recurrence)
         let attributes = buildAlarmAttributes(config: config)
 
-        return AlarmConfiguration(
+        return Alarm.Configuration(
             schedule: alarmSchedule,
             attributes: attributes
         )
     }
 
-    private func buildIntervalAlarm(schedule: NSDictionary, config: NSDictionary) throws -> AlarmConfiguration<BasicAlarmMetadata> {
+    private func buildIntervalAlarm(schedule: NSDictionary, config: NSDictionary) throws -> Alarm.Configuration {
         guard let intervalMinutes = schedule["intervalMinutes"] as? Int else {
             throw NSError(domain: "AlarmKitManager", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid interval"])
         }
@@ -324,7 +272,7 @@ class AlarmKitManager {
         let duration = TimeInterval(intervalMinutes * 60)
         let attributes = buildAlarmAttributes(config: config)
 
-        return AlarmConfiguration.timer(
+        return Alarm.Configuration.timer(
             duration: duration,
             attributes: attributes
         )
@@ -479,10 +427,8 @@ class AlarmKitManager {
             }
         }
     }
-    #endif
 }
 
-#if canImport(AlarmKit)
 // MARK: - Basic Alarm Metadata
 
 struct BasicAlarmMetadata: AlarmMetadata {
@@ -506,4 +452,3 @@ extension UIColor {
         self.init(red: red, green: green, blue: blue, alpha: 1.0)
     }
 }
-#endif
