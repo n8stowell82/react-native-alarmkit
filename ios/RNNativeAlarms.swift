@@ -4,8 +4,16 @@ import React
 @objc(RNNativeAlarms)
 class RNNativeAlarms: RCTEventEmitter {
 
+    // Backing storage for AlarmKitManager (type-erased to avoid availability issues)
+    private var _alarmKitManager: Any?
+
+    // Computed property with availability annotation
     @available(iOS 26.0, *)
-    private var alarmKitManager: AlarmKitManager?
+    private var alarmKitManager: AlarmKitManager? {
+        get { _alarmKitManager as? AlarmKitManager }
+        set { _alarmKitManager = newValue }
+    }
+
     private var notificationFallback: NotificationFallback?
     private var hasListeners = false
 
