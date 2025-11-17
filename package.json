@@ -1,5 +1,5 @@
 {
-  "name": "react-native-alarmkit",
+  "name": "@n8stowell82/react-native-alarmkit",
   "version": "0.1.0",
   "description": "Cross-platform native alarm scheduling for React Native with AlarmKit (iOS 26+) and AlarmManager (Android 12+) support, including smart fallbacks",
   "main": "lib/commonjs/index.js",
