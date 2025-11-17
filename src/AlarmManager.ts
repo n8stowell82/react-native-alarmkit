@@ -13,10 +13,9 @@ import type {
   AlarmCapabilityCheck,
   AlarmFiredEvent,
   PermissionChangedEvent,
-  AlarmCapability,
   EventUnsubscribe,
 } from './types';
-import { AlarmValidation, AlarmError, AlarmErrorCode } from './types';
+import { AlarmValidation, AlarmError, AlarmErrorCode, AlarmCapability } from './types';
 
 /**
  * Main alarm manager implementation
