@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run TypeScript type check
+      run: npm run typecheck
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build
+      run: npm run prepare
+
+    - name: Check build output
+      run: |
+        if [ ! -d "lib" ]; then
+          echo "Build failed: lib directory not found"
+          exit 1
+        fi
+        echo "Build successful"
+
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check iOS files
+      run: |
+        if [ ! -d "ios" ]; then
+          echo "iOS directory not found"
+          exit 1
+        fi
+        echo "iOS files present"
+
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check Android files
+      run: |
+        if [ ! -d "android" ]; then
+          echo "Android directory not found"
+          exit 1
+        fi
+        echo "Android files present"
+
+    - name: Validate Gradle
+      working-directory: android
+      run: |
+        if [ -f "build.gradle" ]; then
+          echo "Gradle configuration found"
+        else
+          echo "Gradle configuration missing"
+          exit 1
+        fi

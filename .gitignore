@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+lib/
+*.log
+
+# iOS
+ios/build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+
+# Android
+android/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+*.iml
+*.apk
+
+# Example
+example/node_modules/
+example/ios/build/
+example/android/build/
+example/android/app/build/
+example/.expo/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Misc
+coverage/
+.nyc_output/
+
+# Claude Code / Development docs (not needed for library users)
+CLAUDE.md
+SETUP_AND_PUBLISHING.md
+IMPLEMENTATION_STATUS.md

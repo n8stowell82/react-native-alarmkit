@@ -1,0 +1,20 @@
+# Source
+example/
+*.md
+!README.md
+
+# Build artifacts
+android/build/
+android/.gradle/
+ios/build/
+
+# Development
+.vscode/
+.idea/
+*.log
+coverage/
+
+# Git
+.git/
+.gitignore
+.gitattributes
