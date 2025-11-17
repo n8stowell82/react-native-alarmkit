@@ -249,7 +249,7 @@ class AlarmKitManager {
 
         // Build alert presentation
         let alert = AlarmPresentation.Alert(
-            title: title,
+            title: LocalizedStringKey(title),
             stopButton: stopButton
         )
 
