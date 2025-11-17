@@ -4,6 +4,7 @@ import React
 @objc(RNNativeAlarms)
 class RNNativeAlarms: RCTEventEmitter {
 
+    @available(iOS 26.0, *)
     private var alarmKitManager: AlarmKitManager?
     private var notificationFallback: NotificationFallback?
     private var hasListeners = false
