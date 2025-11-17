@@ -88,7 +88,7 @@ class AlarmKitManager {
             )
         }
 
-        manager.cancel(id: uuid)
+        try await manager.cancel(id: uuid)
         alarmMetadataStore.removeValue(forKey: id)
     }
 
@@ -242,14 +242,14 @@ class AlarmKitManager {
 
         // Build stop button
         let stopButton = AlarmButton(
-            text: "Done",
+            text: Text("Done"),
             textColor: hexToColor(colorHex),
             systemImageName: "checkmark.circle.fill"
         )
 
         // Build alert presentation
         let alert = AlarmPresentation.Alert(
-            title: title,
+            title: Text(title),
             stopButton: stopButton
         )
 
