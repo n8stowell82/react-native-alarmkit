@@ -242,14 +242,14 @@ class AlarmKitManager {
 
         // Build stop button
         let stopButton = AlarmButton(
-            text: Text("Done"),
+            text: "Done",
             textColor: hexToColor(colorHex),
             systemImageName: "checkmark.circle.fill"
         )
 
         // Build alert presentation
         let alert = AlarmPresentation.Alert(
-            title: Text(title),
+            title: title,
             stopButton: stopButton
         )
 
