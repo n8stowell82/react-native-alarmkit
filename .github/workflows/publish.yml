@@ -11,6 +11,10 @@ on:
       - 'SETUP_AND_PUBLISHING.md'
       - 'IMPLEMENTATION_STATUS.md'
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
