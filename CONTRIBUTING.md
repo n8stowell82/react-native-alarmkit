@@ -1,4 +1,4 @@
-# Contributing to react-native-alarmkit
+# Contributing to rn-native-alarmkit
 
 Thank you for your interest in contributing! 🎉
 
@@ -6,8 +6,8 @@ Thank you for your interest in contributing! 🎉
 
 1. Fork and clone the repository
 ```bash
-git clone git@github.com:n8stowell82/react-native-alarmkit.git
-cd react-native-alarmkit
+git clone git@github.com:n8stowell82/rn-native-alarmkit.git
+cd rn-native-alarmkit
 ```
 
 2. Install dependencies

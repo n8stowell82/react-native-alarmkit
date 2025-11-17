@@ -1,11 +1,11 @@
 # Quick Start Guide
 
-This guide will help you integrate `react-native-alarmkit` into your React Native app for reliable alarm scheduling.
+This guide will help you integrate `rn-native-alarmkit` into your React Native app for reliable alarm scheduling.
 
 ## Installation
 
 ```bash
-npm install react-native-alarmkit
+npm install rn-native-alarmkit
 cd ios && pod install && cd ..
 ```
 
@@ -14,7 +14,7 @@ cd ios && pod install && cd ..
 ### 1. Check Device Capability
 
 ```typescript
-import NativeAlarmManager from 'react-native-alarmkit';
+import NativeAlarmManager from 'rn-native-alarmkit';
 
 // In your component or app initialization
 const checkAlarmSupport = async () => {
@@ -239,7 +239,7 @@ const updateAlarmTime = async (alarmId: string, newTime: { hour: number; minute:
 ```typescript
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, Alert } from 'react-native';
-import NativeAlarmManager, { AlarmCapability } from 'react-native-alarmkit';
+import NativeAlarmManager, { AlarmCapability } from 'rn-native-alarmkit';
 
 export function AlarmManager() {
   const [capability, setCapability] = useState<AlarmCapability | null>(null);
@@ -335,7 +335,7 @@ For your GentleTrack medication reminder app:
 
 ```typescript
 // In your medication service
-import NativeAlarmManager from 'react-native-alarmkit';
+import NativeAlarmManager from 'rn-native-alarmkit';
 
 export class MedicationAlarmService {
   // Schedule alarms when user adds medication

@@ -1,4 +1,4 @@
-# react-native-alarmkit
+# rn-native-alarmkit
 
 Cross-platform native alarm scheduling for React Native with automatic fallback handling.
 
@@ -26,9 +26,9 @@ Cross-platform native alarm scheduling for React Native with automatic fallback 
 ## Installation
 
 ```bash
-npm install react-native-alarmkit
+npm install rn-native-alarmkit
 # or
-yarn add react-native-alarmkit
+yarn add rn-native-alarmkit
 ```
 
 ### iOS Setup
@@ -71,7 +71,7 @@ Add to `AndroidManifest.xml`:
 ## Quick Start
 
 ```typescript
-import NativeAlarmManager from 'react-native-alarmkit';
+import NativeAlarmManager from 'rn-native-alarmkit';
 
 // Check capability
 const capability = await NativeAlarmManager.checkCapability();
@@ -390,7 +390,7 @@ const unsubscribe = NativeAlarmManager.onPermissionChanged((event) => {
 ## Error Handling
 
 ```typescript
-import { AlarmError, AlarmErrorCode } from 'react-native-alarmkit';
+import { AlarmError, AlarmErrorCode } from 'rn-native-alarmkit';
 
 try {
   await NativeAlarmManager.scheduleAlarm(schedule, config);
@@ -558,4 +558,4 @@ If you encounter any issues or have questions:
 
 1. Check the [troubleshooting section](#troubleshooting)
 2. Review the [API documentation](./NATIVE_ALARM_APIS.md)
-3. Open an issue on [GitHub](https://github.com/n8stowell82/react-native-alarmkit/issues)
+3. Open an issue on [GitHub](https://github.com/n8stowell82/rn-native-alarmkit/issues)
